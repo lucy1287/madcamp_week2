@@ -30,6 +30,7 @@ sequelize.sync()
         const crawlerRouter = require('./routes/crawler');
         const userRouter = require('./routes/user');
         const chatRouter = require('./routes/chat');
+        const reviewRouter = require('./routes/review');
 
         app.get('/', (req, res) => {
             res.send('hello node');
@@ -39,6 +40,7 @@ sequelize.sync()
         app.use('/crawler', crawlerRouter);
         app.use('/user', userRouter); // 새로운 사용자 라우터 연결
         app.use('/chat', chatRouter);
+        app.use('/review', reviewRouter);
 
         // HTTP 서버 생성
         const server = http.createServer(app);
