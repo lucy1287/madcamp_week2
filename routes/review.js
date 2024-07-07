@@ -34,4 +34,27 @@ router.post('/create/:id', upload.single('image_url'), async function(req, res) 
     }
 });
 
+// 리뷰 전체 보기 라우트
+router.get('/all', async (req, res) => {
+    try {
+        const reviews = await review.getAllReviews();
+        res.status(200).json(reviews);
+    } catch (error) {
+        console.error(`에러 발생: ${error}`);
+        res.status(500).json({ message: '리뷰 조회 중 오류가 발생했습니다.', error: error.message });
+    }
+});
+
+// 리뷰 전체 보기 라우트
+router.get('/:id', async (req, res) => {
+    try {
+        let id = req.params.id;
+        const reviews = await review.getReviewsByUserId(id);
+        res.status(200).json(reviews);
+    } catch (error) {
+        console.error(`에러 발생: ${error}`);
+        res.status(500).json({ message: '리뷰 조회 중 오류가 발생했습니다.', error: error.message });
+    }
+});
+
 module.exports = router;
