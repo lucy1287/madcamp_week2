@@ -2,16 +2,12 @@ const { DataTypes } = require('sequelize');
 const sequelize = require("../config/database");
 const User = require('./user');
 
-const Review = sequelize.define('Review', {
+const ChatRoom = sequelize.define('ChatRoom', {
     // Review 모델의 속성들을 정의
-    review_id: {
+    chat_room_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
-    },
-    image: {
-        type: DataTypes.TEXT,
-        allowNull: true
     },
     title: {
         type: DataTypes.TEXT,
@@ -21,9 +17,9 @@ const Review = sequelize.define('Review', {
         type: DataTypes.TEXT,
         allowNull: false
     },
-    rating: {
+    count: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
     },
     created_at: {
         type: DataTypes.DATE,
@@ -37,10 +33,10 @@ const Review = sequelize.define('Review', {
             key: 'user_id'   // 참조할 속성 (User 모델의 기본 키)
         }
     }
-        // 추가적인 속성들을 필요에 따라 정의 가능
-    }, {
-    tableName: 'reviews',
+    // 추가적인 속성들을 필요에 따라 정의 가능
+}, {
+    tableName: 'chat_rooms',
     timestamps: false
 });
 
-module.exports = Review;
+module.exports = ChatRoom;

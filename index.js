@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
-const http = require('http');
-const { createWebSocketServer } = require('./controllers/chat');
+const http = require('http').createServer(app); // Express 앱을 사용해 HTTP 서버 생성
+const path = require('path');
 const sequelize = require('./config/database');
 
 // JSON 파싱을 위해 express.json() 미들웨어 사용
@@ -26,6 +26,9 @@ sequelize.sync()
         console.log('Database & tables created!');
         // 이후 서버 시작 등의 작업을 여기서 수행
 
+        // 정적 파일 제공을 위한 middleware 설정
+        app.use('/public', express.static(path.join(__dirname, 'public')));
+
         // 라우터 생성
         const crawlerRouter = require('./routes/crawler');
         const userRouter = require('./routes/user');
@@ -42,17 +45,80 @@ sequelize.sync()
         app.use('/chat', chatRouter);
         app.use('/review', reviewRouter);
 
-        // HTTP 서버 생성
-        const server = http.createServer(app);
+        const io = require('socket.io')(http);
 
-        // 실행
-        const PORT = process.env.PORT || 3000;
-        server.listen(PORT, '0.0.0.0', () => {
-            console.log(`서버가 ${PORT}번 포트에서 대기 중`);
+        const port = 3000;
+
+        // 사용자가 접속한 방 정보를 담는 객체
+        let rooms = {};
+
+        io.on('connection', function(socket) {
+            // 접속
+            console.log(`${socket.id} connected`);
+            var id_message = {
+                id: `${socket.id} 나의 아이디`
+            }
+            socket.emit('check_con', id_message);
+
+
+            // 클라이언트가 특정 방에 접속 요청 처리
+            socket.on('join_room', function(chatRoomId) {
+                // 새로운 방 생성 (이미 존재하면 기존 방에 참여)
+                if (!rooms[chatRoomId]) {
+                    rooms[chatRoomId] = { clients: [] };
+                    console.log(`Created room: ${chatRoomId}`);
+                }
+
+                // 기존에 속한 방 leave
+                Object.keys(socket.rooms).forEach(function(room) {
+                    if (room !== socket.id) {
+                        socket.leave(room);
+                    }
+                });
+
+                // 요청한 방에 join
+                socket.join(chatRoomId);
+                rooms[chatRoomId].clients.push(socket.id);
+                console.log(`${socket.id} joined ${chatRoomId}`);
+
+                // 해당 방에 입장을 알리는 메시지 전송
+                io.to(chatRoomId).emit('joined_room', `${socket.id} joined ${chatRoomId}`);
+            });
+
+            // 클라이언트가 메시지를 보낸 경우 처리
+            socket.on('msg', function(data) {
+                console.log(`Message from ${socket.id} in room ${data.room}: ${data.message}`);
+
+                // 해당 방에 메시지 전송
+                io.to(data.room).emit('message_received', {
+                    sender: socket.id,
+                    message: data.message
+                });
+            });
+
+            // 클라이언트가 연결을 끊은 경우 처리
+            socket.on('disconnect', function() {
+                console.log(`${socket.id} disconnected`);
+
+                // 방에서 클라이언트 제거
+                Object.keys(rooms).forEach(function(roomName) {
+                    const index = rooms[roomName].clients.indexOf(socket.id);
+                    if (index !== -1) {
+                        rooms[roomName].clients.splice(index, 1);
+                        io.to(roomName).emit('left_room', `${socket.id} left ${roomName}`);
+                        // 방에 속한 클라이언트가 없으면 방 삭제
+                        if (rooms[roomName].clients.length === 0) {
+                            delete rooms[roomName];
+                            console.log(`Deleted room: ${roomName}`);
+                        }
+                    }
+                });
+            });
         });
 
-        // HTTP 서버 시작 후 웹 소켓 서버 시작
-        createWebSocketServer(server);
+        http.listen(port, function() {
+            console.log(`listening on *:${port}`);
+        });
     })
     .catch((err) => {
         console.error('Unable to sync database:', err);
