@@ -49,34 +49,75 @@ sequelize.sync()
 
         const port = 3000;
 
-        io.on('connection', function (socket) {
-            console.log(socket.id, 'Connected');
+        // 사용자가 접속한 방 정보를 담는 객체
+        let rooms = {};
+
+        io.on('connection', function(socket) {
+            // 접속
+            console.log(`${socket.id} connected`);
             var id_message = {
                 id: `${socket.id} 나의 아이디`
             }
             socket.emit('check_con', id_message);
 
-            socket.on('msg', function (data) {
-                console.log(socket.id, data);
 
-                console.log("-------------------");
-                console.log('id: ', data.id);
-                console.log('password: ', data.password);
-                console.log("-------------------");
-                var message = {
-                    msg: `Server : "${data.id}" 당신의 id.`,
-                    msg2: "어떠세요?"
+            // 클라이언트가 특정 방에 접속 요청 처리
+            socket.on('join_room', function(chatRoomId) {
+                // 새로운 방 생성 (이미 존재하면 기존 방에 참여)
+                if (!rooms[chatRoomId]) {
+                    rooms[chatRoomId] = { clients: [] };
+                    console.log(`Created room: ${chatRoomId}`);
                 }
-                socket.emit('msg_to_client', message);
+
+                // 기존에 속한 방 leave
+                Object.keys(socket.rooms).forEach(function(room) {
+                    if (room !== socket.id) {
+                        socket.leave(room);
+                    }
+                });
+
+                // 요청한 방에 join
+                socket.join(chatRoomId);
+                rooms[chatRoomId].clients.push(socket.id);
+                console.log(`${socket.id} joined ${chatRoomId}`);
+
+                // 해당 방에 입장을 알리는 메시지 전송
+                io.to(chatRoomId).emit('joined_room', `${socket.id} joined ${chatRoomId}`);
             });
 
-            socket.on('disconnect', function () {
-                console.log('disconnected');
+            // 클라이언트가 메시지를 보낸 경우 처리
+            socket.on('msg', function(data) {
+                console.log(`Message from ${socket.id} in room ${data.room}: ${data.message}`);
+
+                // 해당 방에 메시지 전송
+                io.to(data.room).emit('message_received', {
+                    sender: socket.id,
+                    message: data.message
+                });
+            });
+
+            // 클라이언트가 연결을 끊은 경우 처리
+            socket.on('disconnect', function() {
+                console.log(`${socket.id} disconnected`);
+
+                // 방에서 클라이언트 제거
+                Object.keys(rooms).forEach(function(roomName) {
+                    const index = rooms[roomName].clients.indexOf(socket.id);
+                    if (index !== -1) {
+                        rooms[roomName].clients.splice(index, 1);
+                        io.to(roomName).emit('left_room', `${socket.id} left ${roomName}`);
+                        // 방에 속한 클라이언트가 없으면 방 삭제
+                        if (rooms[roomName].clients.length === 0) {
+                            delete rooms[roomName];
+                            console.log(`Deleted room: ${roomName}`);
+                        }
+                    }
+                });
             });
         });
 
-        http.listen(port, () => {
-            console.log("listening on *:" + port);
+        http.listen(port, function() {
+            console.log(`listening on *:${port}`);
         });
     })
     .catch((err) => {
