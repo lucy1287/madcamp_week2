@@ -9,7 +9,7 @@ const Review = sequelize.define('Review', {
         primaryKey: true,
         autoIncrement: true
     },
-    image_url: {
+    image: {
         type: DataTypes.TEXT,
         allowNull: true
     },

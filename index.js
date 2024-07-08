@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const http = require('http');
+const path = require('path');
 const { createWebSocketServer } = require('./controllers/chat');
 const sequelize = require('./config/database');
 
@@ -25,6 +26,9 @@ sequelize.sync()
     .then(() => {
         console.log('Database & tables created!');
         // 이후 서버 시작 등의 작업을 여기서 수행
+
+        // 정적 파일 제공을 위한 middleware 설정
+        app.use('/public', express.static(path.join(__dirname, 'public')));
 
         // 라우터 생성
         const crawlerRouter = require('./routes/crawler');

@@ -1,4 +1,5 @@
-const Review = require('../models/review');
+
+const { Review, User } = require('../models/associations');
 
 // 사용자 로그인 또는 생성 함수
 exports.createReview = async function(req, id, res) {
@@ -6,7 +7,7 @@ exports.createReview = async function(req, id, res) {
         const reviewData = req.body;
 
         let review = await Review.create({
-            image_url: req.file.path,
+            image: req.file.path,
             title: reviewData.title,
             content: reviewData.content,
             rating: reviewData.rating,
@@ -34,10 +35,31 @@ exports.createReview = async function(req, id, res) {
 exports.getAllReviews = async function() {
     try {
         const reviews = await Review.findAll({
+            attributes: ['title', 'content', 'rating', 'created_at', 'image'], // Review 테이블에서 선택할 컬럼
+            include: [
+                {
+                    model: User,
+                    as: 'user', // 여기에 alias를 명시적으로 지정합니다.
+                    attributes: ['name'],
+                }
+            ],
             order: [['created_at', 'DESC']]
         });
-        return reviews;
+
+        const formattedReviews = reviews.map(review => {
+            return {
+                title: review.title,
+                content: review.content,
+                rating: review.rating,
+                created_at: review.created_at,
+                image: review.image,
+                name: review.user.name // user.name을 최상위 레벨로 변환
+            };
+        });
+
+        return formattedReviews;
     } catch (err) {
+        console.log(err)
         throw new Error('리뷰 조회 중 오류가 발생했습니다.');
     }
 };

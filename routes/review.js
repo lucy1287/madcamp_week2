@@ -20,8 +20,8 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 
-// 새로운 사용자 생성 라우트
-router.post('/create/:id', upload.single('image_url'), async function(req, res) {
+// 새로운 리뷰 생성 라우트
+router.post('/create/:id', upload.single('image'), async function(req, res) {
 
     try {
         let id = req.params.id;
