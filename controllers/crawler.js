@@ -14,7 +14,7 @@ exports.crawler = async function (req, res) {
         const panelContents = $('.Panel_contents__f7025.Panel_fill-scroll__8271f');
         let results = [];
 
-        panelContents.find('a.TicketItem_ticketItem__H51Vs').each(async (index, element) => {
+        panelContents.find('[role="link"]').each(async (index, element) => {
             const concertName = $(element).find('li.TicketItem_goodsName__Ju76j').text().trim();
             const concertPlace = $(element).find('li.TicketItem_placeName__ls_9C').text().trim();
             const concertDate =  $(element).find('li.TicketItem_playDate__5ePr2').text().trim();
