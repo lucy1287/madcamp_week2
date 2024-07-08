@@ -1,7 +1,7 @@
 
 const { Review, User } = require('../models/associations');
 
-// 사용자 로그인 또는 생성 함수
+// 리뷰 생성 함수
 exports.createReview = async function(req, id, res) {
     try {
         const reviewData = req.body;
