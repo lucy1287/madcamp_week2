@@ -1,8 +1,7 @@
 const express = require('express');
 const app = express();
-const http = require('http');
+const http = require('http').createServer(app); // Express 앱을 사용해 HTTP 서버 생성
 const path = require('path');
-const { createWebSocketServer } = require('./controllers/chat');
 const sequelize = require('./config/database');
 
 // JSON 파싱을 위해 express.json() 미들웨어 사용
@@ -46,17 +45,39 @@ sequelize.sync()
         app.use('/chat', chatRouter);
         app.use('/review', reviewRouter);
 
-        // HTTP 서버 생성
-        const server = http.createServer(app);
+        const io = require('socket.io')(http);
 
-        // 실행
-        const PORT = process.env.PORT || 3000;
-        server.listen(PORT, '0.0.0.0', () => {
-            console.log(`서버가 ${PORT}번 포트에서 대기 중`);
+        const port = 3000;
+
+        io.on('connection', function (socket) {
+            console.log(socket.id, 'Connected');
+            var id_message = {
+                id: `${socket.id} 나의 아이디`
+            }
+            socket.emit('check_con', id_message);
+
+            socket.on('msg', function (data) {
+                console.log(socket.id, data);
+
+                console.log("-------------------");
+                console.log('id: ', data.id);
+                console.log('password: ', data.password);
+                console.log("-------------------");
+                var message = {
+                    msg: `Server : "${data.id}" 당신의 id.`,
+                    msg2: "어떠세요?"
+                }
+                socket.emit('msg_to_client', message);
+            });
+
+            socket.on('disconnect', function () {
+                console.log('disconnected');
+            });
         });
 
-        // HTTP 서버 시작 후 웹 소켓 서버 시작
-        createWebSocketServer(server);
+        http.listen(port, () => {
+            console.log("listening on *:" + port);
+        });
     })
     .catch((err) => {
         console.error('Unable to sync database:', err);
