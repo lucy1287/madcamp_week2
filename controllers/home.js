@@ -22,7 +22,7 @@ exports.getClosingSoonConcerts = async function() {
                 'title',
                 'place',
                 'image_url',
-                [Sequelize.literal(`CAST(LEFT(date, 10) AS DATE)`), 'date_only']
+                [Sequelize.literal(`CAST(LEFT(date, 10) AS DATE)`), 'date']
             ],
             where: Sequelize.literal(`CAST(LEFT(date, 10) AS DATE) >= '${targetDate}'`),
             order: [
