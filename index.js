@@ -3,6 +3,7 @@ const app = express();
 const http = require('http').createServer(app); // Express 앱을 사용해 HTTP 서버 생성
 const path = require('path');
 const sequelize = require('./config/database');
+const reviewRouter = require("./routes/review");
 
 // JSON 파싱을 위해 express.json() 미들웨어 사용
 app.use(express.json());
@@ -34,6 +35,7 @@ sequelize.sync()
         const userRouter = require('./routes/user');
         const chatRouter = require('./routes/chat');
         const reviewRouter = require('./routes/review');
+        const homeRouter = require('./routes/home');
 
         app.get('/', (req, res) => {
             res.send('hello node');
@@ -44,6 +46,7 @@ sequelize.sync()
         app.use('/user', userRouter); // 새로운 사용자 라우터 연결
         app.use('/chat', chatRouter);
         app.use('/review', reviewRouter);
+        app.use('/home', homeRouter);
 
         const io = require('socket.io')(http);
 
