@@ -33,4 +33,15 @@ router.get('/room/all', async (req, res) => {
     }
 });
 
+router.get('/room/keyword/:keyword', async (req, res) => {
+    try {
+        let keyword = req.params.keyword;
+        const reviews = await chat.getChatRoomsByKeyword(keyword);
+        res.status(200).json(reviews);
+    } catch (error) {
+        console.error(`에러 발생: ${error}`);
+        res.status(500).json({ message: '채팅방 조회 중 오류가 발생했습니다.', error: error.message });
+    }
+});
+
 module.exports = router;

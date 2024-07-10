@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const  ChatRoom  = require("../models/chat");
 const {Review, User} = require("../models/associations");
 
@@ -47,6 +48,50 @@ exports.getAllChatRooms = async function() {
         return formattedReviews;
     } catch (err) {
         console.log(err)
+        throw new Error('채팅방 조회 중 오류가 발생했습니다.');
+    }
+};
+
+exports.getChatRoomsByKeyword = async function(keyword) {
+    try {
+        let whereClause = {}; // 초기화된 where 절 객체
+
+        // searchTerm이 주어진 경우, 채팅방 이름에 해당 검색어가 포함된 경우를 찾습니다.
+        if (keyword) {
+            whereClause = {
+                title: {
+                    [Op.like]: `%${keyword}%`
+                }
+            };
+        }
+
+        const chatRooms = await ChatRoom.findAll({
+            attributes: ['chat_room_id', 'title', 'content', 'count', 'created_at'],
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['name'],
+                }
+            ],
+            where: whereClause, // 검색 조건을 where 절에 추가합니다.
+            order: [['created_at', 'DESC']]
+        });
+
+        const formattedChatRooms = chatRooms.map(chatRoom => {
+            return {
+                chat_room_id: chatRoom.chat_room_id,
+                title: chatRoom.title,
+                content: chatRoom.content,
+                count: chatRoom.count,
+                created_at: chatRoom.created_at,
+                name: chatRoom.user.name
+            };
+        });
+
+        return formattedChatRooms;
+    } catch (err) {
+        console.log(err);
         throw new Error('채팅방 조회 중 오류가 발생했습니다.');
     }
 };

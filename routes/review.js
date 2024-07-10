@@ -57,4 +57,15 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+router.get('/keyword/:keyword', async (req, res) => {
+    try {
+        let keyword = req.params.keyword;
+        const reviews = await review.getReviewsByKeyword(keyword);
+        res.status(200).json(reviews);
+    } catch (error) {
+        console.error(`에러 발생: ${error}`);
+        res.status(500).json({ message: '리뷰 조회 중 오류가 발생했습니다.', error: error.message });
+    }
+});
+
 module.exports = router;
